@@ -1,67 +1,76 @@
 flowchart LR
-  %% Controllers Layer
+  %% Client Side
+  subgraph Frontend [React SPA]
+    direction TB
+    CLI[User’s Browser\n(React Components)]
+  end
+
+  %% Security Layer
+  subgraph Security [Spring Security & OAuth2]
+    direction TB
+    SC[SecurityConfig<br/>(CSRF, Session, OAuth2Login)] 
+    CO[CustomOAuth2UserService]
+    SC --> CO
+  end
+
+  %% Controllers
   subgraph Controllers [REST Controllers]
-    direction LR
-    PC["PostController<br/>POST /api/posts"]
-    GP["GetPostsController<br/>GET /api/posts"]
-    UP["UpdatePostController<br/>PUT /api/posts/{id}"]
-    DP["DeletePostController<br/>DELETE /api/posts/{id}"]
-    CC["CommentController<br/>POST /api/comments/{postId}"]
-    GC["GetCommentsController<br/>GET /api/comments/{postId}"]
-    DC["DeleteCommentController<br/>DELETE /api/comments/{commentId}"]
-    LC["LikeController<br/>POST /api/posts/{postId}/likes"]
-    UC["UnlikeController<br/>DELETE /api/posts/{postId}/likes"]
-    GL["GetLikesController<br/>GET /api/posts/{postId}/likes"]
-    MPU["MyPostsController<br/>GET /api/users/me/posts"]
-    UPF["UserProfileController<br/>GET /api/users/{userId}/profile"]
-    CPC["CreatePlanController<br/>POST /api/plans"]
-    GPC["GetPlansController<br/>GET /api/plans"]
-    GPEC["GetPlanController<br/>GET /api/plans/{id}"]
-    UPC["UpdatePlanController<br/>PUT /api/plans/{id}"]
-    DPC["DeletePlanController<br/>DELETE /api/plans/{id}"]
-    TG["GetTagsController<br/>GET /api/tags"]
-    CT["CreateTagController<br/>POST /api/tags"]
-    ATP["AssignTagsController<br/>POST /api/posts/{postId}/tags"]
-    PT["GetPostsByTagController<br/>GET /api/tags/{tagName}/posts"]
-    MEP["UploadMediaController<br/>POST /api/posts/{postId}/media"]
-    GN["GetNotificationsController<br/>GET /api/notifications"]
-    RN["MarkReadController<br/>PUT /api/notifications/{id}/read"]
+    direction TB
+    C1[PostController<br/>/api/posts]
+    C2[CommentController<br/>/api/comments]
+    C3[LikeController<br/>/api/posts/{id}/likes]
+    C4[ProfileController<br/>/api/users/**]
+    C5[LearningPlanController<br/>/api/plans]
+    C6[TagController<br/>/api/tags & /api/posts/{id}/tags]
+    C7[NotificationController<br/>/api/notifications]
+    C8[PostMediaController<br/>/api/posts/{id}/media]
   end
 
-  %% Services Layer
+  %% Service Layer
   subgraph Services [Service Layer]
-    direction LR
-    PS["PostService"]
-    CS["CommentService"]
-    LS["LikeService"]
-    US["UserService"]
-    LPS["LearningPlanService"]
-    TS["TagService"]
-    NS["NotificationService"]
-    FSS["FileStorageService"]
+    direction TB
+    S1[PostService]
+    S2[CommentService]
+    S3[LikeService]
+    S4[UserService]
+    S5[LearningPlanService]
+    S6[TagService]
+    S7[NotificationService]
+    S8[FileStorageService]
   end
 
-  %% Repositories Layer
+  %% Data Layer
   subgraph Repositories [JPA Repositories]
-    direction LR
-    PR["PostRepository"]
-    CR["CommentRepository"]
-    LR2["LikeRepository"]
-    UR["UserRepository"]
-    LPR["LearningPlanRepository"]
-    TR["TagRepository"]
-    NR["NotificationRepository"]
+    direction TB
+    R1[PostRepository]
+    R2[CommentRepository]
+    R3[LikeRepository]
+    R4[UserRepository]
+    R5[LearningPlanRepository]
+    R6[TagRepository]
+    R7[NotificationRepository]
   end
 
-  %% External Systems
+  %% Persistence & External
   DB[(MySQL Database)]
-  FS[(File System<br/>uploads/)]
-  GO((Google OAuth2))
+  FS[(File System: uploads/…)]
+  GO[Google OAuth2 Provider]
 
-  %% Draw arrows
-  Controllers --> Services
+  %% DevOps
+  GH[GitHub Actions CI]
+
+  %% Links
+  CLI -->|HTTPS /api/**| SC
+  SC -->|dispatch| C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8
+  C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 --> Services
   Services --> Repositories
+  Services --> FileStorageService
   Repositories --> DB
-  Services --> FSS
-  FSS --> FS
-  US --> GO
+  FileStorageService --> FS
+  SC -- userInfoEndpoint --> CO --> GO
+
+  GH -->|on push/PR|[ci.yml] GH_BUILD[Build & Test]
+
+  style DB fill:#f9f,stroke:#333,stroke-width:1px
+  style FS fill:#ff9,stroke:#333
+  style GH_BUILD fill:#9ff,stroke:#333
